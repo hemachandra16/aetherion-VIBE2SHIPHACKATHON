@@ -125,3 +125,43 @@ Real test output 2026-06-28 15:46 IST:
 - Health endpoint: session stats working
 
 ### NEXT: Firebase Console auth fix + Phase 8 deployment
+
+### 2026-06-28 ~20:15-01:35 IST — UI Overhaul + Features + Error Polish
+
+**MAJOR: UI Overhaul (command-center aesthetic)**
+- Full-width dashboard layout (removed 480px mobile constraint)
+- Persistent top navbar with HOME / CRISIS MODE / RESHUFFLE tabs
+- Version badge (v0.5-beta) + model status indicator (Gemini 2.5 Flash)
+- Hero panic banner: full-width gradient + description text + icon
+- Scheduled Duties section with empty state
+- Disruption CTA card with hover effects
+- Status bar with greeting + live clock
+- Responsive breakpoints for mobile
+- Loading spinner animation
+
+**FEAT: Calendar Commitments API**
+- POST /api/commitments — add calendar events per session
+- GET /api/commitments/{session_id} — list commitments
+- Commitments stored in session store with auto status (SOON/ON TRACK/URGENT)
+
+**FEAT: Gmail Email Draft API**
+- POST /api/email/draft — Gemini-powered email draft generation
+- DisruptionScreen: real AI email drafts (not static alert)
+- Editable draft textarea + copy-to-clipboard
+
+**FIX: File upload limit increased to 100MB** (both client + server)
+
+**FIX: Error messages cleaned up**
+- Backend: detect 429/503 errors, show human-readable messages
+- Frontend: truncate long errors to 200 chars, detect rate limits
+- Agent chat messages explain errors in plain English
+
+**Firebase Status:** AI Studio Starter tier blocks domain management via Console.
+Dev bypass mode works for all testing. Need project owner to add localhost.
+
+**Verified end-to-end in browser (5 commits, all passing):**
+- Login → dev bypass → Home → Crisis Mode → Reshuffle: all tabs work
+- Build: 265ms, 0 errors, 43 modules
+- Known: Gemini free-tier rate limit (20 req/day) blocks live AI testing
+
+### NEXT: Phase 8 — GitHub push + Cloud Run deploy + submission doc
