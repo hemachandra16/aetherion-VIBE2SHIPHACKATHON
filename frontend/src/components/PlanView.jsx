@@ -6,11 +6,13 @@ export default function PlanView({ plan, sessionId, onStepComplete, disabled }) 
   if (!plan || !plan.steps) return null
 
   const steps     = plan.steps || []
-  const cutCount  = steps.filter(s => s.cut || s.cut_if_behind).length
-  const activeSteps = steps.filter(s => !s.cut)
+  // Only show steps as "cut" if they have an explicit `cut: true` flag
+  // set by the Critic — NOT just because they have cut_if_behind: true
+  // (cut_if_behind is a suggestion for the Critic, not a display state)
+  const cutCount  = steps.filter(s => s.cut === true).length
 
   async function handleStepClick(step, index) {
-    if (step.completed || step.cut || disabled) return
+    if (step.completed || step.cut === true || disabled) return
     try {
       const result = await completeStep(sessionId, index)
       if (onStepComplete) onStepComplete(result)
@@ -26,7 +28,8 @@ export default function PlanView({ plan, sessionId, onStepComplete, disabled }) 
       )}
 
       {steps.map((step, i) => {
-        const isCut  = step.cut || (step.cut_if_behind && !step.completed)
+        // Only treat as cut if explicitly cut by Critic (cut: true)
+        const isCut  = step.cut === true
         const isDone = step.completed
 
         return (
@@ -51,6 +54,11 @@ export default function PlanView({ plan, sessionId, onStepComplete, disabled }) 
               {step.rag_grounded && (
                 <div style={{ fontSize: 11, color: 'var(--sage)', marginTop: 3 }}>
                   From your uploaded notes
+                </div>
+              )}
+              {step.cut_if_behind && !isCut && !isDone && (
+                <div style={{ fontSize: 10, color: 'var(--paper-faint)', marginTop: 2 }}>
+                  Can be skipped if running behind
                 </div>
               )}
             </div>

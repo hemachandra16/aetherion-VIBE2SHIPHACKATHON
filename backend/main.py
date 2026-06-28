@@ -21,6 +21,12 @@ load_dotenv()
 from agents.pipeline import run_agent_pipeline, update_step_status
 from agents.rag import process_upload, get_rag_context
 from agents.confidence import calculate_confidence
+from agents.session_store import (
+    get_session_stats,
+    get_rag_files,
+    MAX_FILE_SIZE_BYTES,
+    MAX_FILES_PER_SESSION,
+)
 
 # ── Logging ──────────────────────────────────────────────
 logging.basicConfig(
@@ -63,7 +69,8 @@ app.add_middleware(
 @app.get("/api/health")
 async def health():
     has_key = bool(os.getenv("GEMINI_API_KEY"))
-    return {"status": "ok", "gemini_key_set": has_key}
+    stats = get_session_stats()
+    return {"status": "ok", "gemini_key_set": has_key, "sessions": stats}
 
 
 # ── Chat / Agent pipeline ───────────────────────────────
@@ -122,16 +129,43 @@ async def upload_file(file: UploadFile = File(...), session_id: str = Form("defa
             detail=f"Unsupported file type '{ext}'. Allowed: {', '.join(allowed)}",
         )
 
+    # Check file count limit BEFORE reading the file (saves memory)
+    existing_files = get_rag_files(session_id)
+    if len(existing_files) >= MAX_FILES_PER_SESSION:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {MAX_FILES_PER_SESSION} files per session reached. "
+                   f"Already uploaded: {', '.join(f['filename'] for f in existing_files)}",
+        )
+
     logger.info(f"[upload] session={session_id} file={file.filename}")
 
     try:
         content = await file.read()
+
+        # Enforce file size limit — check AFTER read (UploadFile doesn't know size upfront)
+        if len(content) > MAX_FILE_SIZE_BYTES:
+            size_mb = len(content) / (1024 * 1024)
+            limit_mb = MAX_FILE_SIZE_BYTES / (1024 * 1024)
+            raise HTTPException(
+                status_code=400,
+                detail=f"File too large ({size_mb:.1f} MB). Maximum: {limit_mb:.0f} MB",
+            )
+
         result = await process_upload(
             file_bytes=content,
             filename=file.filename,
             session_id=session_id,
         )
+
+        # Include list of all uploaded files in the response
+        all_files = get_rag_files(session_id)
+        result["uploaded_files"] = all_files
+        result["files_remaining"] = MAX_FILES_PER_SESSION - len(all_files)
+
         return JSONResponse(content=result)
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions (file size, file count)
     except Exception as e:
         logger.error(f"[upload] Error: {e}\n{traceback.format_exc()}")
         return JSONResponse(
@@ -142,6 +176,19 @@ async def upload_file(file: UploadFile = File(...), session_id: str = Form("defa
                 "message": f"File processing failed: {str(e)}",
             },
         )
+
+
+# ── Session files info ──────────────────────────────────
+@app.get("/api/files/{session_id}")
+async def get_files(session_id: str):
+    """Get list of uploaded files and limits for a session."""
+    files = get_rag_files(session_id)
+    return {
+        "files": files,
+        "count": len(files),
+        "max": MAX_FILES_PER_SESSION,
+        "remaining": MAX_FILES_PER_SESSION - len(files),
+    }
 
 
 # ── Step completion / confidence ─────────────────────────
@@ -192,11 +239,18 @@ import os as _os
 _DIST = _os.path.join(_os.path.dirname(__file__), "dist")
 if _os.path.isdir(_DIST):
     # Serve static assets (JS, CSS, images)
-    app.mount("/assets", StaticFiles(directory=_os.path.join(_DIST, "assets")), name="assets")
+    _assets_dir = _os.path.join(_DIST, "assets")
+    if _os.path.isdir(_assets_dir):
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_catchall(full_path: str):
         """Return index.html for all non-API routes (SPA client-side routing)."""
+        # First check if a specific static file exists (e.g. favicon)
+        file_path = _os.path.join(_DIST, full_path)
+        if full_path and _os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise return index.html for client-side routing
         index = _os.path.join(_DIST, "index.html")
         if _os.path.isfile(index):
             return FileResponse(index)

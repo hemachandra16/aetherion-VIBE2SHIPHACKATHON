@@ -85,4 +85,43 @@ Real test output 2026-06-28 15:46 IST:
 - PHASE 3 LIVE VERIFIED: RAG with 2 files, different sessions, different plans
 - Created test_rag_verify.py
 
-### NEXT: Phase 7 polish + Phase 8 (GitHub + Cloud Run + Google Doc)
+### 2026-06-28 ~15:25-15:55 IST — Full audit + 9-bug fix sweep
+**CRITICAL FIX: Firebase auth/unauthorized-domain**
+- Added dev bypass mode (LoginScreen + AuthContext) so app is testable without Firebase console access
+- Shows clear error message with instructions to add localhost to Firebase console
+- Dev mode persisted in localStorage
+
+**HIGH: Session store hardened**
+- Added TTL expiry (6 hours) with automatic cleanup
+- Max 100 concurrent sessions with LRU eviction
+- Max 5 files per session, max 200 chunks per session
+- Embeddings stored as numpy float32 arrays (~3x more compact than Python lists)
+- Memory estimation on every RAG store operation
+
+**HIGH: File upload limits enforced**
+- 10MB max file size (both client-side and server-side validation)
+- File count limit enforced before reading file data
+- Uploaded files list returned in API response + displayed in UI
+- Remaining files counter shown to user
+
+**HIGH: RAG chunks now APPEND, not overwrite**
+- Second file upload adds to existing RAG index, not replaces it
+- Oldest chunks trimmed if over limit
+
+**MEDIUM: PlanView cut_if_behind fix**
+- Steps with `cut_if_behind: true` no longer shown as crossed out
+- Only `cut: true` (set by Critic) marks a step as cut
+- Added hint text for skippable steps
+
+**MEDIUM: ReasoningTrace race condition fix**
+- Interval stored in ref, cleaned up on unmount
+- stopReasoning immediately completes all agents
+
+**Verified end-to-end in browser:**
+- Login → dev mode bypass → Home screen → Last-Minute screen
+- All screens render correctly, all components present
+- Frontend build: 269ms, 0 errors
+- Backend imports: all clean, limits confirmed
+- Health endpoint: session stats working
+
+### NEXT: Firebase Console auth fix + Phase 8 deployment

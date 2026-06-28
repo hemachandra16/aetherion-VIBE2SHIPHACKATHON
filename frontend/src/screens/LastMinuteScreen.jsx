@@ -46,6 +46,7 @@ export default function LastMinuteScreen() {
   const planStartRef = useRef(null)
 
   const chatBottomRef = useRef(null)
+  const reasoningIntervalRef = useRef(null) // Track interval for cleanup
 
   // Scroll chat to bottom on new message
   useEffect(() => {
@@ -83,22 +84,48 @@ export default function LastMinuteScreen() {
     setShowTrace(true)
     setActiveAgent('triage')
     setCompletedAgents([])
-    // Triage → Planner → Critic → Executor stepping
+
     const steps = ['triage', 'planner', 'critic', 'executor']
     let i = 0
+    // Clear any previous interval first
+    if (reasoningIntervalRef.current) {
+      clearInterval(reasoningIntervalRef.current)
+    }
+
     const interval = setInterval(() => {
       i++
       if (i < steps.length) {
         setCompletedAgents(prev => [...prev, steps[i - 1]])
         setActiveAgent(steps[i])
       } else {
-        setCompletedAgents(steps)
+        setCompletedAgents([...steps])
         setActiveAgent(null)
         clearInterval(interval)
+        reasoningIntervalRef.current = null
       }
-    }, 1800)
-    return () => clearInterval(interval)
+    }, 2000)
+
+    reasoningIntervalRef.current = interval
   }
+
+  function stopReasoning() {
+    if (reasoningIntervalRef.current) {
+      clearInterval(reasoningIntervalRef.current)
+      reasoningIntervalRef.current = null
+    }
+    // Complete all agents immediately when API returns
+    setCompletedAgents(['triage', 'planner', 'critic', 'executor'])
+    setActiveAgent(null)
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (reasoningIntervalRef.current) {
+        clearInterval(reasoningIntervalRef.current)
+      }
+    }
+  }, [])
 
   async function handleSend() {
     const text = input.trim()
@@ -109,7 +136,7 @@ export default function LastMinuteScreen() {
     setLoading(true)
 
     const history = messages.map(m => ({ role: m.role, content: m.content }))
-    const stopReasoning = startReasoning()
+    startReasoning()
 
     try {
       const result = await sendChat(text, sessionId.current, history)
@@ -241,7 +268,7 @@ export default function LastMinuteScreen() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe your situation…"
+          placeholder="Describe your situation..."
           rows={1}
           disabled={loading}
           aria-label="Chat input"
