@@ -1,0 +1,11 @@
+.env
+node_modules/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+firebase-service-account.json
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/

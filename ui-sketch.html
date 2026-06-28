@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aetherion — UI Sketch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#14181C;
+    --charcoal:#1D2329;
+    --charcoal-2:#262D34;
+    --paper:#F4F1E9;
+    --paper-dim:#9CA3A8;
+    --amber:#F2A93B;
+    --amber-dim:#7A5A22;
+    --ember:#E2574C;
+    --sage:#6FA98C;
+    --line:#323A42;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#0A0C0E;
+    font-family:'Public Sans',sans-serif;
+    color:var(--paper);
+    padding:32px 16px;
+  }
+  .display{font-family:'Barlow Condensed',sans-serif; letter-spacing:0.01em;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  .label-row{display:flex;align-items:baseline;gap:10px;margin-bottom:36px;}
+  .label-row h1{font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:var(--paper-dim);font-weight:600;}
+  .label-row span{font-size:13px;color:var(--amber);}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:24px;
+  }
+  .phone{
+    background:var(--ink);
+    border:1px solid var(--line);
+    border-radius:22px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:560px;
+  }
+  .phone-head{
+    padding:20px 20px 0 20px;
+  }
+  .screen-tag{
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--paper-dim);
+    margin-bottom:6px;
+  }
+  .screen-title{
+    font-family:'Barlow Condensed',sans-serif;
+    font-weight:600;
+    font-size:22px;
+    margin-bottom:16px;
+  }
+  .body{flex:1;padding:0 20px 20px 20px;display:flex;flex-direction:column;gap:14px;}
+
+  /* ---- Screen 1: Home ---- */
+  .panic-btn{
+    background:linear-gradient(180deg,var(--ember),#C2453C);
+    border-radius:16px;
+    padding:22px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .panic-btn .kicker{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#FBDAD7;}
+  .panic-btn .title{font-family:'Barlow Condensed';font-weight:700;font-size:26px;color:#fff;}
+  .commit-row{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--charcoal);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;
+  }
+  .commit-row .name{font-size:14px;font-weight:500;}
+  .commit-row .meta{font-size:12px;color:var(--paper-dim);}
+  .tag{font-size:10px;letter-spacing:0.06em;text-transform:uppercase;padding:3px 8px;border-radius:6px;}
+  .tag.soon{background:rgba(242,169,59,0.15);color:var(--amber);}
+  .tag.ok{background:rgba(111,169,140,0.15);color:var(--sage);}
+
+  /* ---- Screen 2: Last-Minute Mode ---- */
+  .burn-wrap{margin-bottom:4px;}
+  .burn-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--paper-dim);margin-bottom:6px;}
+  .burn-track{height:8px;background:var(--charcoal-2);border-radius:4px;overflow:hidden;}
+  .burn-fill{height:100%;width:62%;background:linear-gradient(90deg,var(--amber),var(--ember));}
+  .bubble{max-width:88%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.45;}
+  .bubble.agent{background:var(--charcoal);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px;}
+  .bubble.user{background:var(--amber-dim);align-self:flex-end;border-bottom-right-radius:4px;color:#FBE6C4;}
+  .conf-card{
+    background:var(--charcoal);border:1px solid var(--line);border-radius:12px;padding:14px;
+    display:flex;justify-content:space-between;align-items:center;margin-top:auto;
+  }
+  .conf-card .num{font-family:'JetBrains Mono';font-size:24px;font-weight:700;color:var(--sage);}
+  .conf-card .cap{font-size:11px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:0.08em;}
+  .mic-btn{
+    align-self:center;width:54px;height:54px;border-radius:50%;
+    background:var(--amber);display:flex;align-items:center;justify-content:center;
+    border:none;margin-top:6px;
+  }
+
+  /* ---- Screen 3: Plan view ---- */
+  .step{
+    background:var(--charcoal);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;display:flex;gap:12px;align-items:flex-start;
+  }
+  .step .dur{font-family:'JetBrains Mono';font-size:12px;color:var(--amber);min-width:48px;}
+  .step .step-title{font-size:14px;font-weight:500;margin-bottom:2px;}
+  .step .step-sub{font-size:11.5px;color:var(--paper-dim);}
+  .step.cut{opacity:0.55;}
+  .step.cut .step-title{text-decoration:line-through;}
+  .cut-note{font-size:11px;color:var(--paper-dim);text-align:center;margin-top:auto;}
+
+  /* ---- Screen 4: Confirm-send modal ---- */
+  .overlay{
+    background:rgba(10,12,14,0.6);flex:1;display:flex;align-items:center;padding:8px;
+    border-radius:8px;
+  }
+  .modal{
+    background:var(--charcoal);border:1px solid var(--line);border-radius:14px;
+    padding:18px;width:100%;
+  }
+  .modal .modal-kicker{font-size:11px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;}
+  .modal .to-line{font-size:12.5px;color:var(--paper-dim);margin-bottom:10px;}
+  .modal .to-line b{color:var(--paper);font-weight:500;}
+  .draft-box{
+    background:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;
+    font-size:13px;line-height:1.5;color:var(--paper-dim);margin-bottom:14px;
+  }
+  .modal-actions{display:flex;gap:10px;}
+  .btn{
+    flex:1;text-align:center;padding:11px 0;border-radius:10px;font-size:13px;font-weight:600;border:none;
+  }
+  .btn.primary{background:var(--amber);color:#2A1C04;}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--paper);}
+
+  /* ---- Screen 5: Disruption mode ---- */
+  .disrupt-banner{
+    background:rgba(226,87,76,0.12);border:1px solid rgba(226,87,76,0.4);border-radius:12px;
+    padding:12px 14px;font-size:12.5px;color:#F2B3AC;
+  }
+  .resh-row{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--charcoal);border:1px solid var(--line);border-radius:12px;padding:11px 14px;
+  }
+  .resh-row .name{font-size:13.5px;}
+  .arrow{font-size:11px;color:var(--sage);}
+
+  .caption{font-size:12px;color:var(--paper-dim);margin-top:10px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="label-row">
+    <h1>Aetherion — UI sketch</h1><span>Last-Minute Life Saver</span>
+  </div>
+  <div class="grid">
+
+    <!-- Screen 1: Home -->
+    <div>
+      <div class="phone">
+        <div class="phone-head">
+          <div class="screen-tag">Screen 01</div>
+          <div class="screen-title display">Home</div>
+        </div>
+        <div class="body">
+          <div class="panic-btn">
+            <div class="kicker">Something's about to slip</div>
+            <div class="title display">I'm in trouble →</div>
+          </div>
+          <div class="commit-row">
+            <div><div class="name">DBMS assignment</div><div class="meta">Due in 4h 12m</div></div>
+            <div class="tag soon">Soon</div>
+          </div>
+          <div class="commit-row">
+            <div><div class="name">Client call — Damian</div><div class="meta">Tomorrow, 11:00am</div></div>
+            <div class="tag ok">On track</div>
+          </div>
+          <div class="commit-row">
+            <div><div class="name">Gym — leg day</div><div class="meta">Today, 6:00pm</div></div>
+            <div class="tag ok">On track</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">Single clear entry point into crisis mode, plus a calm list of everything else — no clutter competing with the one button that matters.</div>
+    </div>
+
+    <!-- Screen 2: Last-Minute Mode -->
+    <div>
+      <div class="phone">
+        <div class="phone-head">
+          <div class="screen-tag">Screen 02</div>
+          <div class="screen-title display">Last-Minute Mode</div>
+        </div>
+        <div class="body">
+          <div class="burn-wrap">
+            <div class="burn-meta"><span>Time remaining</span><span class="mono">1h 48m</span></div>
+            <div class="burn-track"><div class="burn-fill"></div></div>
+          </div>
+          <div class="bubble agent">Exam in 2 hours — got it. Which subject, and do you have notes or a syllabus?</div>
+          <div class="bubble user">Thermodynamics, uploaded my notes pdf</div>
+          <div class="bubble agent">Found 6 high-yield topics in your notes. Building a 1h 48m plan now — cutting the lowest-weight topic to keep it realistic.</div>
+          <button class="mic-btn" aria-label="Voice input">●</button>
+          <div class="conf-card">
+            <div><div class="cap">Confidence</div><div class="num mono">74%</div></div>
+            <div class="cap" style="text-align:right;max-width:120px;">you'll finish in time</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">The "burn bar" is the signature element — a depleting fuse, amber to ember as time runs out. Confidence number recalculates live as the user works.</div>
+    </div>
+
+    <!-- Screen 3: Plan view -->
+    <div>
+      <div class="phone">
+        <div class="phone-head">
+          <div class="screen-tag">Screen 03</div>
+          <div class="screen-title display">Plan</div>
+        </div>
+        <div class="body">
+          <div class="step">
+            <div class="dur mono">25m</div>
+            <div><div class="step-title">Laws of thermodynamics — recap</div><div class="step-sub">Highest weight in your notes</div></div>
+          </div>
+          <div class="step">
+            <div class="dur mono">35m</div>
+            <div><div class="step-title">Entropy &amp; Carnot cycle problems</div><div class="step-sub">3 worked examples</div></div>
+          </div>
+          <div class="step">
+            <div class="dur mono">20m</div>
+            <div><div class="step-title">Quick active recall pass</div><div class="step-sub">Flagged terms only</div></div>
+          </div>
+          <div class="step cut">
+            <div class="dur mono">—</div>
+            <div><div class="step-title">Refrigeration cycles</div><div class="step-sub">Cut — lowest exam weight</div></div>
+          </div>
+          <div class="cut-note">Critic agent cut 1 step to fit your time budget</div>
+        </div>
+      </div>
+      <div class="caption">Cut steps stay visible, struck through, instead of silently disappearing — the user sees exactly what the agent gave up and why.</div>
+    </div>
+
+    <!-- Screen 4: Confirm-to-send -->
+    <div>
+      <div class="phone">
+        <div class="phone-head">
+          <div class="screen-tag">Screen 04</div>
+          <div class="screen-title display">Confirm to send</div>
+        </div>
+        <div class="overlay">
+          <div class="modal">
+            <div class="modal-kicker">Disruption mode — draft ready</div>
+            <div class="to-line">To: <b>Prof. Iyer</b> · Re: Assignment extension</div>
+            <div class="draft-box">"Hi Professor Iyer, a family emergency came up this evening — could I get a short extension on tonight's submission? I'll have it in by tomorrow morning."</div>
+            <div class="modal-actions">
+              <button class="btn ghost">Edit</button>
+              <button class="btn primary">Send now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">Nothing irreversible fires without this tap. The agent drafts, the human sends — stated as a design choice, not a limitation.</div>
+    </div>
+
+    <!-- Screen 5: Disruption mode reshuffle -->
+    <div>
+      <div class="phone">
+        <div class="phone-head">
+          <div class="screen-tag">Screen 05</div>
+          <div class="screen-title display">Day reshuffled</div>
+        </div>
+        <div class="body">
+          <div class="disrupt-banner">Disruption logged — today's plan has been rebuilt around it.</div>
+          <div class="resh-row"><div class="name">DBMS assignment</div><div class="arrow mono">→ tomorrow 9am</div></div>
+          <div class="resh-row"><div class="name">Client call — Damian</div><div class="arrow mono">unchanged</div></div>
+          <div class="resh-row"><div class="name">Gym — leg day</div><div class="arrow mono">→ skipped</div></div>
+        </div>
+      </div>
+      <div class="caption">One log entry, the whole day reshuffles — unmissable items left alone, flexible ones moved or dropped automatically.</div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

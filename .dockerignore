@@ -1,0 +1,13 @@
+node_modules/
+frontend/node_modules/
+frontend/.env
+backend/.env
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+frontend/dist/
+*.md
+!README.md
