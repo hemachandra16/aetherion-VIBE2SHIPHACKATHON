@@ -48,3 +48,23 @@ export async function getConfidence(sessionId) {
 export async function checkHealth() {
   return apiFetch('/api/health')
 }
+
+// ── Commitments (Calendar) ──────────────────────────────
+export async function getCommitments(sessionId) {
+  return apiFetch(`/api/commitments/${sessionId}`)
+}
+
+export async function addCommitment(sessionId, name, dueAt, category = 'task') {
+  return apiFetch('/api/commitments', {
+    method: 'POST',
+    body: JSON.stringify({ session_id: sessionId, name, due_at: dueAt, category }),
+  })
+}
+
+// ── Email Draft (Gmail) ──────────────────────────────────
+export async function generateEmailDraft(context, recipient = '', situation = '', planSummary = '') {
+  return apiFetch('/api/email/draft', {
+    method: 'POST',
+    body: JSON.stringify({ context, recipient, situation, plan_summary: planSummary }),
+  })
+}

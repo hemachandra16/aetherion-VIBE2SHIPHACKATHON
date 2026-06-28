@@ -1,7 +1,7 @@
-// Disruption Mode screen
+// Disruption Mode screen — reshuffle + email drafting
 // User logs a disruption — agent triages fallout, drafts reschedule messages
-import { useState, useRef } from 'react'
-import { sendChat } from '../api'
+import { useState, useRef, useEffect } from 'react'
+import { sendChat, generateEmailDraft } from '../api'
 
 function makeSessionId() {
   return `dis-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -14,9 +14,16 @@ export default function DisruptionScreen() {
   const [loading, setLoading]     = useState(false)
   const [plan, setPlan]           = useState(null)
   const [draftEmail, setDraftEmail] = useState(null)
+  const [draftLoading, setDraftLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [emailEdited, setEmailEdited] = useState('')
+  const [emailCopied, setEmailCopied] = useState(false)
   const [error, setError]         = useState(null)
   const chatBottomRef             = useRef(null)
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
 
   function addMessage(role, content) {
     setMessages(prev => [...prev, { role, content, id: Date.now() + Math.random() }])
@@ -37,18 +44,7 @@ export default function DisruptionScreen() {
         addMessage('agent', result.question)
       } else if (result.type === 'plan') {
         setPlan(result.plan)
-        addMessage('agent', 'I\'ve triaged the fallout from your disruption and built a recovery plan.')
-
-        // Check if plan includes a draft email step
-        const emailStep = result.plan?.steps?.find(
-          s => s.title?.toLowerCase().includes('email') || s.title?.toLowerCase().includes('message')
-        )
-        if (emailStep) {
-          setDraftEmail({
-            to: result.triage?.subject_or_topic || 'your contact',
-            body: emailStep.description || emailStep.title,
-          })
-        }
+        addMessage('agent', 'I\'ve triaged the fallout from your disruption and built a recovery plan. You can also generate an email to notify affected parties.')
       } else if (result.error) {
         setError(result.message)
       }
@@ -59,14 +55,52 @@ export default function DisruptionScreen() {
     }
   }
 
+  async function handleGenerateDraft() {
+    if (draftLoading) return
+    setDraftLoading(true)
+    try {
+      // Build context from the conversation and plan
+      const context = messages
+        .filter(m => m.role === 'user')
+        .map(m => m.content)
+        .join('. ')
+      const planSummary = plan?.steps
+        ?.filter(s => !s.cut)
+        ?.map(s => `${s.title} (${s.duration_minutes}m)`)
+        ?.join(', ') || ''
+
+      const draft = await generateEmailDraft(
+        context,
+        '',  // recipient will be inferred by Gemini
+        'Disruption event requiring schedule change',
+        planSummary,
+      )
+      setDraftEmail(draft)
+      setEmailEdited(draft.body || '')
+      setShowModal(true)
+    } catch (e) {
+      setError(`Failed to generate draft: ${e.message}`)
+    } finally {
+      setDraftLoading(false)
+    }
+  }
+
+  function handleCopyEmail() {
+    const fullEmail = `Subject: ${draftEmail?.subject || 'Schedule Update'}\n\n${emailEdited}`
+    navigator.clipboard.writeText(fullEmail).then(() => {
+      setEmailCopied(true)
+      setTimeout(() => setEmailCopied(false), 2000)
+    })
+  }
+
   function handleKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
   }
 
   return (
-    <div className="screen" style={{ paddingBottom: 0, height: '100dvh', overflow: 'hidden' }}>
+    <div className="screen" style={{ paddingBottom: 0, height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
       <div className="disruption-banner">
-        Disruption Mode — log what happened and I'll triage the fallout.
+        <strong>Disruption Mode</strong> — log what happened and I'll triage the fallout, reshuffle your plan, and help draft notifications.
       </div>
 
       {error && (
@@ -76,7 +110,7 @@ export default function DisruptionScreen() {
       <div className="chat-area" style={{ flex: 1, overflowY: 'auto' }}>
         {messages.length === 0 && (
           <div className="bubble bubble-agent">
-            What happened? Describe the disruption — I'll figure out what's now at risk and what can wait.
+            What happened? Describe the disruption — I'll figure out what's now at risk, reshuffle your priorities, and can draft a message to anyone affected.
           </div>
         )}
         {messages.map(m => (
@@ -94,13 +128,13 @@ export default function DisruptionScreen() {
 
       {/* Reshuffled plan */}
       {plan?.steps && (
-        <div style={{ overflowY: 'auto', maxHeight: '35vh', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ overflowY: 'auto', maxHeight: '30vh', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div className="section-label">Reshuffled plan</div>
           {plan.steps.filter(s => !s.cut).map((step, i) => (
-            <div key={i} className="commit-row">
-              <div>
-                <div className="commit-name">{step.title}</div>
-                <div className="commit-meta">{step.description}</div>
+            <div key={i} className="duty-card">
+              <div className="duty-info">
+                <div className="duty-name">{step.title}</div>
+                <div className="duty-meta">{step.description}</div>
               </div>
               <span className="tag tag-ok">{step.duration_minutes}m</span>
             </div>
@@ -108,39 +142,56 @@ export default function DisruptionScreen() {
         </div>
       )}
 
-      {/* Draft email CTA */}
-      {draftEmail && (
+      {/* Draft email CTA — only after plan exists */}
+      {plan && (
         <button
-          id="view-draft-email-btn"
+          id="generate-draft-btn"
           className="btn btn-ghost"
-          onClick={() => setShowModal(true)}
-          style={{ width: '100%' }}
+          onClick={handleGenerateDraft}
+          disabled={draftLoading}
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
         >
-          Review draft message →
+          {draftLoading ? (
+            <>
+              <div className="thinking-dots" style={{ padding: 0 }}><span /><span /><span /></div>
+              Generating draft...
+            </>
+          ) : (
+            <>📧 Generate email draft</>
+          )}
         </button>
       )}
 
-      {/* Confirm-send modal */}
+      {/* Email draft modal */}
       {showModal && draftEmail && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-kicker">Disruption mode — draft ready</div>
-            <div className="modal-title">Review before sending</div>
-            <div style={{ fontSize: 13, color: 'var(--paper-dim)', marginBottom: 12 }}>
-              To: <strong style={{ color: 'var(--paper)' }}>{draftEmail.to}</strong>
-            </div>
-            <div className="draft-box">{draftEmail.body}</div>
+            <div className="modal-kicker">AI-generated email draft</div>
+            <div className="modal-title">{draftEmail.subject || 'Schedule Update'}</div>
+
+            {draftEmail.suggested_recipients?.length > 0 && (
+              <div style={{ fontSize: 12, color: 'var(--paper-dim)', marginBottom: 12 }}>
+                Suggested recipients: <strong style={{ color: 'var(--paper)' }}>
+                  {draftEmail.suggested_recipients.join(', ')}
+                </strong>
+              </div>
+            )}
+
+            <textarea
+              className="draft-editor"
+              value={emailEdited}
+              onChange={e => setEmailEdited(e.target.value)}
+              rows={10}
+            />
+
             <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Edit</button>
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>Close</button>
               <button
-                id="confirm-send-btn"
+                id="copy-draft-btn"
                 className="btn btn-primary"
-                onClick={() => {
-                  alert('In a production build, this would trigger Gmail API send via /api/email/send')
-                  setShowModal(false)
-                }}
+                onClick={handleCopyEmail}
               >
-                Send now
+                {emailCopied ? '✓ Copied!' : 'Copy to clipboard'}
               </button>
             </div>
           </div>
@@ -154,7 +205,7 @@ export default function DisruptionScreen() {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe the disruption…"
+          placeholder="Describe the disruption..."
           rows={1}
           disabled={loading}
         />

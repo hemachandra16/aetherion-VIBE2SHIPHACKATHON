@@ -21,6 +21,7 @@ load_dotenv()
 from agents.pipeline import run_agent_pipeline, update_step_status
 from agents.rag import process_upload, get_rag_context
 from agents.confidence import calculate_confidence
+from agents.integrations import get_commitments, add_commitment, generate_email_draft
 from agents.session_store import (
     get_session_stats,
     get_rag_files,
@@ -228,6 +229,75 @@ async def get_confidence(session_id: str):
         return JSONResponse(
             status_code=500,
             content={"error": True, "message": str(e)},
+        )
+
+
+# ── Commitments (Calendar) ────────────────────────────────
+@app.get("/api/commitments/{session_id}")
+async def list_commitments(session_id: str):
+    """Get all commitments for a session (calendar events / deadlines)."""
+    try:
+        items = get_commitments(session_id)
+        return JSONResponse(content={"commitments": items, "count": len(items)})
+    except Exception as e:
+        logger.error(f"[commitments] Error: {e}")
+        return JSONResponse(status_code=500, content={"error": True, "message": str(e)})
+
+
+@app.post("/api/commitments")
+async def create_commitment(request: Request):
+    """Add a commitment (deadline / calendar event) to a session."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    session_id = body.get("session_id", "default")
+    name = body.get("name", "").strip()
+    due_at = body.get("due_at", "")
+    category = body.get("category", "task")
+
+    if not name:
+        raise HTTPException(status_code=400, detail="name is required")
+
+    try:
+        result = add_commitment(session_id, name, due_at, category)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"[commitments] Error: {e}")
+        return JSONResponse(status_code=500, content={"error": True, "message": str(e)})
+
+
+# ── Email Draft (Gmail) ──────────────────────────────────
+@app.post("/api/email/draft")
+async def draft_email(request: Request):
+    """Generate an AI-written email draft for crisis communication."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    context = body.get("context", "").strip()
+    recipient = body.get("recipient", "")
+    situation = body.get("situation", "")
+    plan_summary = body.get("plan_summary", "")
+
+    if not context:
+        raise HTTPException(status_code=400, detail="context is required")
+
+    try:
+        draft = await generate_email_draft(
+            context=context,
+            recipient_hint=recipient,
+            situation=situation,
+            plan_summary=plan_summary,
+        )
+        return JSONResponse(content=draft)
+    except Exception as e:
+        logger.error(f"[email/draft] Error: {e}\n{traceback.format_exc()}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": f"Draft generation failed: {str(e)}"},
         )
 
 

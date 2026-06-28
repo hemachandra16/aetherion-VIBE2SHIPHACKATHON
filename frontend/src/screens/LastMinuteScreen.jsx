@@ -192,7 +192,7 @@ export default function LastMinuteScreen() {
   }
 
   return (
-    <div className="screen" style={{ paddingBottom: 0, height: '100dvh', overflow: 'hidden' }}>
+    <div className="screen" style={{ paddingBottom: 0, height: 'calc(100vh - 52px)', overflow: 'hidden' }}>
       {/* Burn bar — only when we have real timing from triage */}
       {timeRemaining !== null && totalMinutes && (
         <BurnBar timeRemainingMinutes={timeRemaining} totalMinutes={totalMinutes} />

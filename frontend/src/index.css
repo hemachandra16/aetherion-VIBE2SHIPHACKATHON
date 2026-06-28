@@ -417,6 +417,24 @@ body{background:var(--ink);color:var(--paper);font-family:'Public Sans',sans-ser
 }
 .google-sign-in-btn:hover{border-color:var(--amber);background:var(--amber-glow-2);transform:translateY(-1px);}
 
+/* ── Draft editor ── */
+.draft-editor{
+  width:100%;background:var(--ink-2);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:16px;font-family:'Public Sans',sans-serif;font-size:13px;line-height:1.6;
+  color:var(--paper);resize:vertical;min-height:140px;outline:none;
+  transition:border-color var(--t-fast);margin-bottom:16px;
+}
+.draft-editor:focus{border-color:var(--amber);}
+
+/* ── Commit row (backward compat) ── */
+.commit-row{
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--charcoal);border:1px solid var(--line);border-radius:var(--r-md);
+  padding:14px 18px;
+}
+.commit-name{font-size:14px;font-weight:500;color:var(--paper);margin-bottom:2px;}
+.commit-meta{font-size:12px;color:var(--paper-dim);}
+
 /* ── Scrollbar ── */
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-track{background:transparent;}
