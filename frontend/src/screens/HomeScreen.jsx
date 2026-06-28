@@ -1,103 +1,96 @@
-// Home screen — panic entry point + today's commitments list
+// Home screen — command center dashboard
+// Panic CTA + scheduled duties + disruption entry + status bar
 // No hardcoded task names or times — all data from user/state
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-function formatTimeAgo(ms) {
-  const m = Math.round(ms / 60000)
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  const rem = m % 60
-  return rem > 0 ? `${h}h ${rem}m` : `${h}h`
-}
-
 export default function HomeScreen() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
+  const [now, setNow] = useState(new Date())
 
-  // Commitments come from user input — this list starts empty
-  // Users add commitments through Last-Minute Mode sessions
+  // Live clock tick
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 60000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Commitments from user sessions — starts empty
   const [commitments] = useState([])
 
   const displayName = user?.displayName?.split(' ')[0] || 'there'
+  const greeting = now.getHours() < 12 ? 'Good morning' : now.getHours() < 17 ? 'Good afternoon' : 'Good evening'
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
   return (
-    <div className="screen">
-      {/* Greeting */}
-      <div>
-        <div className="screen-title">Hey, {displayName}.</div>
-        <div className="screen-subtitle" style={{ marginTop: 4 }}>
-          What's pressing right now?
+    <div className="screen home-screen">
+      {/* Hero panic banner — full width gradient */}
+      <div className="panic-hero" onClick={() => navigate('/last-minute')}>
+        <div className="panic-hero-content">
+          <div className="panic-kicker">Something is about to slip</div>
+          <div className="panic-headline">I'm in trouble <span className="panic-arrow">›</span></div>
+          <div className="panic-desc">
+            Tap to trigger the high-urgency Last-Minute Life Saver interface. We will
+            immediately diagnose your constraint, cut Nice-to-Haves, and set a live action plan.
+          </div>
+        </div>
+        <div className="panic-hero-icon">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.2)" strokeWidth="2" fill="none" />
+            <text x="32" y="42" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="32" fontWeight="700">!</text>
+          </svg>
         </div>
       </div>
 
-      {/* Primary CTA */}
-      <button
-        id="panic-entry-btn"
-        className="panic-btn pulse"
-        onClick={() => navigate('/last-minute')}
-        aria-label="Enter Last-Minute Mode"
-      >
-        <div className="kicker">Something's about to slip</div>
-        <div className="title">I'm in trouble →</div>
-      </button>
-
-      {/* Disruption mode entry */}
-      <button
-        id="disruption-entry-btn"
-        className="commit-row"
-        style={{ cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', background: 'var(--charcoal)' }}
-        onClick={() => navigate('/disruption')}
-      >
-        <div>
-          <div className="commit-name">Log a disruption</div>
-          <div className="commit-meta">Emergency, illness, unexpected event</div>
-        </div>
-        <span className="tag tag-critical">Disruption Mode</span>
-      </button>
-
-      {/* Today's commitments */}
-      {commitments.length > 0 && (
-        <div>
-          <div className="section-label">Today</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {commitments.map((c, i) => (
-              <div key={i} className="commit-row">
-                <div>
-                  <div className="commit-name">{c.name}</div>
-                  <div className="commit-meta">{c.meta}</div>
+      {/* Scheduled duties section */}
+      <div className="section-block">
+        <div className="section-label">Scheduled Duties</div>
+        <div className="duties-list">
+          {commitments.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📋</div>
+              <div className="empty-text">
+                No scheduled duties yet. Start a crisis session and your commitments will appear here.
+              </div>
+            </div>
+          ) : (
+            commitments.map((c, i) => (
+              <div key={i} className="duty-card">
+                <div className="duty-info">
+                  <div className="duty-name">{c.name}</div>
+                  <div className="duty-meta">{c.meta}</div>
                 </div>
                 <span className={`tag tag-${c.status}`}>{c.statusLabel}</span>
               </div>
-            ))}
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Disruption CTA */}
+      <div className="disruption-cta" onClick={() => navigate('/disruption')}>
+        <div className="disruption-cta-left">
+          <div className="disruption-cta-title">Sudden disruption?</div>
+          <div className="disruption-cta-desc">
+            Emergency came up? We will auto-triage, reshuffle commitments, and draft apology/postpone messages.
           </div>
         </div>
-      )}
+        <button className="disruption-cta-btn">
+          Log Disruption Mode
+        </button>
+      </div>
 
-      {commitments.length === 0 && (
-        <div style={{ color: 'var(--paper-faint)', fontSize: 13, textAlign: 'center', marginTop: 8 }}>
-          Commitments from your sessions will appear here.
+      {/* Status bar */}
+      <div className="status-bar">
+        <div className="status-left">
+          <span className="status-dot-green" />
+          <span>{greeting}, {displayName}</span>
         </div>
-      )}
-
-      {/* Sign out */}
-      <button
-        id="sign-out-btn"
-        onClick={logout}
-        style={{
-          marginTop: 'auto',
-          background: 'none',
-          border: 'none',
-          color: 'var(--paper-faint)',
-          fontSize: 12,
-          cursor: 'pointer',
-          padding: '8px 0',
-          textAlign: 'center',
-        }}
-      >
-        Sign out
-      </button>
+        <div className="status-right">
+          <span className="status-time">{timeStr}</span>
+        </div>
+      </div>
     </div>
   )
 }

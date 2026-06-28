@@ -4,7 +4,7 @@
 import { useState, useRef } from 'react'
 import { uploadFile } from '../api'
 
-const MAX_FILE_SIZE_MB = 10
+const MAX_FILE_SIZE_MB = 100
 const MAX_FILES = 5
 
 export default function FileUpload({ sessionId, onUploadComplete }) {

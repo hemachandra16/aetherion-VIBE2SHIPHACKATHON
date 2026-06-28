@@ -24,7 +24,7 @@ MAX_SESSIONS = 100
 SESSION_TTL_SECONDS = 6 * 3600  # 6 hours
 MAX_RAG_CHUNKS_PER_SESSION = 200  # ~200 chunks ≈ 80,000 chars ≈ a 40-page doc
 MAX_FILES_PER_SESSION = 5
-MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024  # 100 MB
 
 # { session_id: SessionData }
 _sessions: dict[str, dict] = {}
