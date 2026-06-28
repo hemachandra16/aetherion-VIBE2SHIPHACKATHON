@@ -46,10 +46,20 @@ export default function DisruptionScreen() {
         setPlan(result.plan)
         addMessage('agent', 'I\'ve triaged the fallout from your disruption and built a recovery plan. You can also generate an email to notify affected parties.')
       } else if (result.error) {
-        setError(result.message)
+        const msg = result.message || 'Something went wrong.'
+        const isRateLimit = msg.includes('rate limit') || msg.includes('429')
+        setError(isRateLimit
+          ? 'Gemini API rate limit reached. Please wait a few minutes and try again.'
+          : msg.length > 200 ? msg.slice(0, 200) + '...' : msg
+        )
       }
     } catch (e) {
-      setError(`Connection error: ${e.message}`)
+      const msg = e.message || ''
+      const isRateLimit = msg.includes('rate limit') || msg.includes('429')
+      setError(isRateLimit
+        ? 'Gemini API rate limit reached. Please wait a few minutes and try again.'
+        : `Connection error: ${msg.length > 150 ? msg.slice(0, 150) + '...' : msg}`
+      )
     } finally {
       setLoading(false)
     }

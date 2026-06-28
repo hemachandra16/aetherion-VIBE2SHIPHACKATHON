@@ -165,13 +165,30 @@ export default function LastMinuteScreen() {
         )
         setShowTrace(false)
       } else if (result.error) {
-        setError(result.message || 'Something went wrong with the agent pipeline.')
-        addMessage('agent', 'I hit an error building your plan. See the error above for details.')
+        // Show clean error, not raw API dumps
+        const msg = result.message || 'Something went wrong.'
+        const isRateLimit = msg.includes('rate limit') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('429')
+        const cleanMsg = isRateLimit
+          ? 'Gemini API rate limit reached. The free tier allows 20 requests/day. Please wait a few minutes and try again.'
+          : msg.length > 200 ? msg.slice(0, 200) + '...' : msg
+        setError(cleanMsg)
+        addMessage('agent', isRateLimit
+          ? 'I\'ve hit the API rate limit. Please wait a couple of minutes and try again.'
+          : 'I hit an error building your plan. Please try again in a moment.'
+        )
         setShowTrace(false)
       }
     } catch (e) {
-      setError(`Connection error: ${e.message}`)
-      addMessage('agent', 'Could not reach the backend. Check your connection and try again.')
+      const msg = e.message || ''
+      const isRateLimit = msg.includes('rate limit') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('429')
+      setError(isRateLimit
+        ? 'Gemini API rate limit reached. Please wait a few minutes and try again.'
+        : `Connection error: ${msg.length > 150 ? msg.slice(0, 150) + '...' : msg}`
+      )
+      addMessage('agent', isRateLimit
+        ? 'I\'ve hit the API rate limit. Please wait a couple of minutes and try again.'
+        : 'Could not reach the backend. Check your connection and try again.'
+      )
       setShowTrace(false)
     } finally {
       setLoading(false)

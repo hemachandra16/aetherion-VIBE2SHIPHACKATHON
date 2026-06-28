@@ -80,10 +80,23 @@ async def call_gemini(
             if attempt < max_retries - 1:
                 await asyncio.sleep(wait)
 
-    raise RuntimeError(
-        f"Gemini call failed after {max_retries} attempts on model {REASONING_MODEL}. "
-        f"Last error: {last_error}"
-    )
+    # Determine if this is a rate limit or a different error
+    error_str = str(last_error)
+    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+        raise RuntimeError(
+            "Gemini API rate limit reached. The free tier allows 20 requests/day per model. "
+            "Please wait a few minutes and try again, or upgrade your API key at https://ai.google.dev"
+        )
+    elif "503" in error_str or "UNAVAILABLE" in error_str:
+        raise RuntimeError(
+            "Gemini service is temporarily unavailable due to high demand. "
+            "Please try again in a minute."
+        )
+    else:
+        raise RuntimeError(
+            f"AI reasoning failed after {max_retries} attempts. Please try again. "
+            f"Error: {type(last_error).__name__}"
+        )
 
 
 async def get_embeddings(texts: list[str]) -> list[list[float]]:
