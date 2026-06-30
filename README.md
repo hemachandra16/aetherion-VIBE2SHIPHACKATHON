@@ -1,34 +1,53 @@
 # Aetherion — The Last-Minute Life Saver
 
-**Vibe2Ship Hackathon | Coding Ninjas × Google for Developers | PS1**
+**Vibe2Ship Hackathon | Coding Ninjas × Google for Developers**
 
-An AI agent that doesn't just remind you about deadlines — it triages the moment you're already late, builds the minimum-viable plan to still make it, and acts on your behalf (with your sign-off) when things fall apart.
+Aetherion is an AI-powered emergency command center designed for crisis management. When you're facing an imminent missed deadline, a sudden schedule disruption, or an overwhelming workload, traditional "to-do list" apps fail because they rely on passive reminders. 
+
+Aetherion intercepts you during these panic moments, utilizing a multi-agent AI pipeline to triage the crisis, generate a time-boxed, mathematically feasible recovery plan, and execute real-world actions to salvage the situation.
 
 ---
 
-## Stack
-- **Frontend:** React (Vite) + vanilla CSS design system
-- **Backend:** FastAPI (Python)
-- **AI:** Gemini 2.5 Flash (reasoning) + gemini-embedding-001 (RAG embeddings)
-- **Auth:** Firebase (Google Sign-In), project `concrete-arcadia-r7krv`
+## 🌟 Key Features
+
+- **Multi-Agent Reasoning Pipeline:** Instead of a single LLM call, Aetherion routes your crisis through four distinct AI agents: 
+  - *Triage* (assesses urgency and asks clarifying questions)
+  - *Planner* (generates recovery steps)
+  - *Critic* (validates time constraints mathematically)
+  - *Executor* (formats the output and triggers integrations)
+- **Transparent Reasoning Trace:** Builds user trust by visually displaying the AI's thought process as it triages the problem.
+- **Time-Boxed Burn Bar:** Generates plans specifically tailored to the exact minutes you have left, visually tracked via a UI Burn Bar (amber → ember).
+- **Automated Crisis Mitigation (Integrations):** 
+  - Automatically drafts context-aware emails (via Gmail API) to affected stakeholders (e.g., "My laptop crashed, presentation delayed by 15 mins").
+  - Syncs recovery steps directly to your Google Calendar.
+- **RAG-Grounded Planning:** Upload PDF/TXT notes so the plan is grounded in your actual content and study materials.
+
+## 🛠️ Technologies & Stack
+
+- **Frontend:** React (Vite) + Vanilla CSS (Glassmorphism & Dark UI)
+- **Backend:** FastAPI (Python) + WebSockets
+- **AI / LLM:** Google Gemini 3.5 Flash (Core Reasoning) + gemini-embedding-001 (RAG embeddings)
+- **Authentication:** Google OAuth 2.0 (Firebase Auth)
+- **APIs:** Google Calendar API, Gmail API
 - **Deploy:** Google Cloud Run
 
-## Local development
+## 🚀 Local Development
 
 ### Prerequisites
 - Node.js 18+, Python 3.11+
-- A Gemini API key
+- A Google Gemini API key
 - Firebase project config (see `frontend/.env.example`)
+- Google OAuth Client ID & Secret (for Calendar/Gmail integrations)
 
-### Backend
+### Backend Setup
 ```bash
 cd backend
-cp .env.example .env   # fill in GEMINI_API_KEY
+cp .env.example .env   # fill in GEMINI_API_KEY and GOOGLE_CLIENT_*
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
 
-### Frontend
+### Frontend Setup
 ```bash
 cd frontend
 cp .env.example .env   # fill in Firebase config values
@@ -36,24 +55,8 @@ npm install
 npm run dev
 ```
 
-Frontend runs on http://localhost:5173, proxies API calls to http://localhost:8000.
+The frontend runs on `http://localhost:5173` and proxies API calls to `http://localhost:8000`.
 
-## Architecture
-See [architecture.md](architecture.md) for the full system diagram.
+## 🏗️ Architecture
 
-**Agent pipeline:** Triage → Planner → Critic → Action Executor
-- Triage classifies urgency and asks clarifying questions when info is missing
-- Planner builds a minimum-viable, time-boxed plan (RAG-grounded if notes uploaded)
-- Critic checks feasibility and runs one revision loop
-- Executor stores the approved plan and tracks completion
-
-## Features (Phases 0–4)
-- Google Sign-In (Firebase Auth)
-- Last-Minute Mode: chat → multi-agent plan → live confidence meter
-- Burn bar: depleting timer visual (amber → ember as time runs out)
-- RAG: upload PDF/TXT notes → plan grounded in your actual content
-- Disruption Mode: log emergency → agent triages fallout → draft messages with human confirm gate
-- Live confidence meter: recalculates from real plan state, not static
-
-## Deployment
-Cloud Run deployment instructions in `PROGRESS.md`.
+See [architecture.md](architecture.md) for a deep dive into the multi-agent system design.
