@@ -55,9 +55,9 @@ body{background:var(--ink);color:var(--paper);font-family:'Public Sans',sans-ser
   font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;
   color:var(--paper);letter-spacing:0.06em;text-decoration:none;
   display:flex;align-items:center;gap:0;white-space:nowrap;flex-shrink:0;
-  overflow:visible;
+  overflow:visible;background:transparent;border:none;padding:0;cursor:pointer;
 }
-.nav-logo-text{color:var(--amber);white-space:nowrap;overflow:visible;}
+.nav-logo-text{color:var(--paper);white-space:nowrap;overflow:visible;}
 .nav-logo-accent{color:var(--amber);}
 .nav-logo-icon{color:var(--amber);font-size:16px;}
 .nav-badge{
