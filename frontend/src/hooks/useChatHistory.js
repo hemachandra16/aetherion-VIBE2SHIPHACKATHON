@@ -2,8 +2,8 @@ import { useState, useCallback } from 'react'
 
 const HISTORY_KEY_PREFIX = 'aetherion_history_'
 
-export function useChatHistory(mode) {
-  const historyKey = `${HISTORY_KEY_PREFIX}${mode}`
+export function useChatHistory(mode, uid) {
+  const historyKey = `${HISTORY_KEY_PREFIX}${mode}_${uid || 'anon'}`
 
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem(historyKey)) || [] } catch { return [] }

@@ -22,7 +22,7 @@ export default function LastMinuteScreen() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const sessionId = useRef(`crisis_${user?.uid || 'default'}`)
-  const { history, activeId, setActiveId, getConversation, saveConversation, deleteConversation } = useChatHistory('crisis')
+  const { history, activeId, setActiveId, getConversation, saveConversation, deleteConversation } = useChatHistory('crisis', user?.uid)
 
   const [messages, setMessages] = useState([])
   const [plan, setPlan] = useState(null)

@@ -13,7 +13,7 @@ export default function DisruptionScreen() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const sessionId = useRef(`disruption_${user?.uid || 'default'}`)
-  const { history, activeId, setActiveId, getConversation, saveConversation, deleteConversation } = useChatHistory('disruption')
+  const { history, activeId, setActiveId, getConversation, saveConversation, deleteConversation } = useChatHistory('disruption', user?.uid)
 
   const [messages, setMessages] = useState([])
   const [plan, setPlan] = useState(null)
