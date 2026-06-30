@@ -11,14 +11,12 @@ const GoogleIcon = () => (
 )
 
 export default function LoginScreen() {
-  const { signInWithGoogle, signInDevMode, error } = useAuth()
-
-  const isUnauthorizedDomain = error && error.includes('domain not authorized')
+  const { signInWithGoogle, error } = useAuth()
 
   return (
     <div className="auth-screen">
       <div>
-        <div className="auth-logo">AETH<span>ER</span>ION</div>
+        <div className="auth-logo">{'AETH'}<span className="nav-logo-accent">{'ER'}</span>{'ION'}</div>
       </div>
       <div className="auth-tagline">
         The AI that doesn't remind you about deadlines — it helps you survive them.
@@ -38,23 +36,6 @@ export default function LoginScreen() {
         <GoogleIcon />
         Continue with Google
       </button>
-
-      {/* Dev mode bypass — only shown when Firebase domain error occurs */}
-      {isUnauthorizedDomain && (
-        <button
-          id="dev-mode-btn"
-          className="btn btn-ghost"
-          onClick={signInDevMode}
-          style={{
-            marginTop: 8,
-            fontSize: 13,
-            color: 'var(--sage)',
-            border: '1px solid var(--sage-dim, rgba(124,179,66,0.3))',
-          }}
-        >
-          Continue in dev mode
-        </button>
-      )}
 
       <div style={{ fontSize: 11, color: 'var(--paper-faint)', maxWidth: 260, lineHeight: 1.5 }}>
         Your data is stored privately in your account. Nothing is shared.

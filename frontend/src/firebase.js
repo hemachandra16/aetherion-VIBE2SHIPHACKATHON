@@ -12,7 +12,8 @@ const firebaseConfig = {
   appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-// Validate at startup — loud failure, not silent
+let app, auth, googleProvider
+
 const missingKeys = Object.entries(firebaseConfig)
   .filter(([, v]) => !v)
   .map(([k]) => k)
@@ -24,6 +25,12 @@ if (missingKeys.length > 0) {
   )
 }
 
-export const app = initializeApp(firebaseConfig)
-export const auth = getAuth(app)
-export const googleProvider = new GoogleAuthProvider()
+try {
+  app = initializeApp(firebaseConfig)
+  auth = getAuth(app)
+  googleProvider = new GoogleAuthProvider()
+} catch (e) {
+  console.error('[Firebase] Failed to initialize:', e.message)
+}
+
+export { app, auth, googleProvider }

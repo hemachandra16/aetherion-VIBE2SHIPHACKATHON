@@ -1,6 +1,6 @@
 // App.jsx — routing, layout, and top-bar navigation
-// Design inspired by command-center aesthetic: persistent navbar with tab navigation
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import LoginScreen from './screens/LoginScreen'
 import HomeScreen from './screens/HomeScreen'
@@ -8,15 +8,34 @@ import LastMinuteScreen from './screens/LastMinuteScreen'
 import DisruptionScreen from './screens/DisruptionScreen'
 
 const NAV_TABS = [
-  { path: '/home',        label: 'Home' },
+  { path: '/home', label: 'Home' },
   { path: '/last-minute', label: 'Crisis Mode' },
-  { path: '/disruption',  label: 'Reshuffle' },
+  { path: '/disruption', label: 'Recover' },
 ]
 
 function NavBar() {
-  const { user, logout, authMode } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false)
+      }
+    }
+    function handleEscape(e) {
+      if (e.key === 'Escape') setShowDropdown(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
 
   if (!user || location.pathname === '/') return null
 
@@ -26,16 +45,15 @@ function NavBar() {
         <button
           onClick={() => navigate('/home')}
           className="nav-logo"
-          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
           aria-label="Aetherion home"
         >
           <span className="nav-logo-icon">◇</span>
-          AETH<span>ER</span>ION
+          <span className="nav-logo-text">{'AETH'}<span className="nav-logo-accent">{'ER'}</span>{'ION'}</span>
         </button>
         <span className="nav-badge">v0.5-beta</span>
         <span className="nav-model-status">
           <span className="status-dot" />
-          Gemini 2.5 Flash
+          Gemini 3.5 Flash
         </span>
       </div>
 
@@ -45,19 +63,21 @@ function NavBar() {
             key={tab.path}
             className={`nav-tab${location.pathname === tab.path ? ' nav-tab-active' : ''}`}
             onClick={() => navigate(tab.path)}
+            aria-current={location.pathname === tab.path ? 'page' : undefined}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="nav-right">
+      <div className="nav-right" ref={dropdownRef}>
         <button
           id="nav-user-btn"
           className="nav-user-btn"
-          onClick={logout}
-          aria-label="Sign out"
-          title={user.displayName || 'Sign out'}
+          onClick={() => setShowDropdown(!showDropdown)}
+          aria-expanded={showDropdown}
+          aria-haspopup="true"
+          aria-label="User menu"
         >
           {user.photoURL
             ? <img src={user.photoURL} alt={user.displayName || 'User'} referrerPolicy="no-referrer" />
@@ -66,6 +86,21 @@ function NavBar() {
               </span>
           }
         </button>
+        {showDropdown && (
+          <div className="user-dropdown">
+            <div className="dropdown-header">
+              <div className="dropdown-name">{user.displayName || 'User'}</div>
+              <div className="dropdown-email">{user.email}</div>
+            </div>
+            <div className="dropdown-divider" />
+            <button
+              className="dropdown-item"
+              onClick={() => { setShowDropdown(false); logout() }}
+            >
+              Sign Out
+            </button>
+          </div>
+        )}
       </div>
     </nav>
   )

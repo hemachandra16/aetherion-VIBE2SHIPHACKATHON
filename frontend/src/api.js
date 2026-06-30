@@ -1,5 +1,5 @@
 // API client — all backend calls go through here
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE = import.meta.env.VITE_API_URL || ''
 
 async function apiFetch(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
@@ -66,5 +66,12 @@ export async function generateEmailDraft(context, recipient = '', situation = ''
   return apiFetch('/api/email/draft', {
     method: 'POST',
     body: JSON.stringify({ context, recipient, situation, plan_summary: planSummary }),
+  })
+}
+
+export async function sendRealEmail(toEmail, subject, body) {
+  return apiFetch('/api/email/send', {
+    method: 'POST',
+    body: JSON.stringify({ to_email: toEmail, subject, body }),
   })
 }

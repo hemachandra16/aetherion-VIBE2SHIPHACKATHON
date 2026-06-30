@@ -1,6 +1,4 @@
 // Home screen — command center dashboard
-// Panic CTA + scheduled duties + disruption entry + status bar
-// No hardcoded task names or times — all data from user/state
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -10,13 +8,11 @@ export default function HomeScreen() {
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
 
-  // Live clock tick
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60000)
     return () => clearInterval(id)
   }, [])
 
-  // Commitments from user sessions — starts empty
   const [commitments] = useState([])
 
   const displayName = user?.displayName?.split(' ')[0] || 'there'
@@ -25,8 +21,14 @@ export default function HomeScreen() {
 
   return (
     <div className="screen home-screen">
-      {/* Hero panic banner — full width gradient */}
-      <div className="panic-hero" onClick={() => navigate('/last-minute')}>
+      <div
+        className="panic-hero"
+        onClick={() => navigate('/last-minute')}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') navigate('/last-minute') }}
+        role="button"
+        tabIndex={0}
+        aria-label="Trigger crisis mode"
+      >
         <div className="panic-hero-content">
           <div className="panic-kicker">Something is about to slip</div>
           <div className="panic-headline">I'm in trouble <span className="panic-arrow">›</span></div>
@@ -43,7 +45,6 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Scheduled duties section */}
       <div className="section-block">
         <div className="section-label">Scheduled Duties</div>
         <div className="duties-list">
@@ -53,6 +54,9 @@ export default function HomeScreen() {
               <div className="empty-text">
                 No scheduled duties yet. Start a crisis session and your commitments will appear here.
               </div>
+              <button className="btn btn-primary" onClick={() => navigate('/last-minute')}>
+                Start a Session
+              </button>
             </div>
           ) : (
             commitments.map((c, i) => (
@@ -68,20 +72,25 @@ export default function HomeScreen() {
         </div>
       </div>
 
-      {/* Disruption CTA */}
-      <div className="disruption-cta" onClick={() => navigate('/disruption')}>
+      <div
+        className="disruption-cta"
+        onClick={() => navigate('/disruption')}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') navigate('/disruption') }}
+        role="button"
+        tabIndex={0}
+        aria-label="Log a disruption"
+      >
         <div className="disruption-cta-left">
           <div className="disruption-cta-title">Sudden disruption?</div>
           <div className="disruption-cta-desc">
             Emergency came up? We will auto-triage, reshuffle commitments, and draft apology/postpone messages.
           </div>
         </div>
-        <button className="disruption-cta-btn">
+        <button className="disruption-cta-btn" tabIndex={-1}>
           Log Disruption Mode
         </button>
       </div>
 
-      {/* Status bar */}
       <div className="status-bar">
         <div className="status-left">
           <span className="status-dot-green" />

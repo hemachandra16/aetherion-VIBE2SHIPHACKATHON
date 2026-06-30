@@ -14,8 +14,8 @@ export default function ReasoningTrace({ activeAgent, completedAgents = [], visi
   return (
     <div className="reasoning-trace">
       <div className="reasoning-trace-header">
-        <span style={{ color: 'var(--amber)', fontSize: 10 }}>●</span>
-        <span>Agent reasoning in progress</span>
+        <span style={{ color: completedAgents.length >= 4 ? 'var(--sage)' : 'var(--amber)', fontSize: 10 }}>●</span>
+        <span>{completedAgents.length >= 4 ? 'Agent reasoning complete' : 'Agent reasoning in progress'}</span>
       </div>
       {AGENTS.map((agent) => {
         const isDone   = completedAgents.includes(agent.id)

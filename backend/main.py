@@ -14,14 +14,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from dotenv import load_dotenv
 
 load_dotenv()
 
+limiter = Limiter(key_func=get_remote_address)
+
 from agents.pipeline import run_agent_pipeline, update_step_status
 from agents.rag import process_upload, get_rag_context
 from agents.confidence import calculate_confidence
-from agents.integrations import get_commitments, add_commitment, generate_email_draft
+from agents.integrations import get_commitments, add_commitment, generate_email_draft, send_real_email
+from agents.oauth import router as oauth_router
 from agents.session_store import (
     get_session_stats,
     get_rag_files,
@@ -56,14 +62,22 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Tighten for production
+    allow_origins=[
+        "https://aetherion-308059826502.asia-south1.run.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(oauth_router)
 
 
 # ── Health check ─────────────────────────────────────────
@@ -76,6 +90,7 @@ async def health():
 
 # ── Chat / Agent pipeline ───────────────────────────────
 @app.post("/api/chat")
+@limiter.limit("10/minute")
 async def chat(request: Request):
     """
     Accepts: { "message": str, "session_id": str, "conversation_history": [...] }
@@ -93,6 +108,11 @@ async def chat(request: Request):
 
     if not message:
         raise HTTPException(status_code=400, detail="message is required")
+    if len(message) > 10000:
+        raise HTTPException(status_code=400, detail="Message too long (max 10,000 characters)")
+    if len(history) > 20:
+        history = history[-20:]
+    session_id = str(session_id)[:128]
 
     logger.info(f"[chat] session={session_id} message={message[:80]}...")
 
@@ -110,14 +130,15 @@ async def chat(request: Request):
             content={
                 "error": True,
                 "error_type": "PIPELINE_ERROR",
-                "message": f"Agent pipeline failed: {str(e)}",
+                "message": "An internal error occurred. Please try again.",
             },
         )
 
 
 # ── File upload (RAG) ───────────────────────────────────
 @app.post("/api/upload")
-async def upload_file(file: UploadFile = File(...), session_id: str = Form("default")):
+@limiter.limit("5/minute")
+async def upload_file(request: Request, file: UploadFile = File(...), session_id: str = Form("default")):
     """Upload a PDF/text file for RAG grounding."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
@@ -174,7 +195,7 @@ async def upload_file(file: UploadFile = File(...), session_id: str = Form("defa
             content={
                 "error": True,
                 "error_type": "UPLOAD_ERROR",
-                "message": f"File processing failed: {str(e)}",
+                "message": "File processing failed. Please try again.",
             },
         )
 
@@ -270,6 +291,7 @@ async def create_commitment(request: Request):
 
 # ── Email Draft (Gmail) ──────────────────────────────────
 @app.post("/api/email/draft")
+@limiter.limit("5/minute")
 async def draft_email(request: Request):
     """Generate an AI-written email draft for crisis communication."""
     try:
@@ -297,9 +319,35 @@ async def draft_email(request: Request):
         logger.error(f"[email/draft] Error: {e}\n{traceback.format_exc()}")
         return JSONResponse(
             status_code=500,
-            content={"error": True, "message": f"Draft generation failed: {str(e)}"},
+            content={"error": True, "message": "Draft generation failed. Please try again."},
         )
 
+
+@app.post("/api/email/send")
+@limiter.limit("3/minute")
+async def send_email_real(request: Request):
+    """Sends the actual email using the Gmail API."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    to_email = body.get("to_email", "").strip()
+    subject = body.get("subject", "").strip()
+    email_body = body.get("body", "").strip()
+
+    if not to_email or not email_body:
+        raise HTTPException(status_code=400, detail="to_email and body are required")
+
+    try:
+        result = await send_real_email(to_email=to_email, subject=subject, body=email_body)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"[email/send] Error: {e}\n{traceback.format_exc()}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": True, "message": "Email send failed. Please check authentication and try again."},
+        )
 
 # ── SPA catch-all — must come AFTER all /api/* routes ────────────
 # Serves the React frontend from the dist/ directory if it exists.
@@ -318,10 +366,18 @@ if _os.path.isdir(_DIST):
         """Return index.html for all non-API routes (SPA client-side routing)."""
         # First check if a specific static file exists (e.g. favicon)
         file_path = _os.path.join(_DIST, full_path)
-        if full_path and _os.path.isfile(file_path):
+        real_path = _os.path.realpath(file_path)
+        if full_path and _os.path.isfile(file_path) and real_path.startswith(_os.path.realpath(_DIST)):
             return FileResponse(file_path)
         # Otherwise return index.html for client-side routing
         index = _os.path.join(_DIST, "index.html")
         if _os.path.isfile(index):
-            return FileResponse(index)
+            from fastapi.responses import HTMLResponse
+            with open(index, "r", encoding="utf-8") as f:
+                content = f.read()
+            resp = HTMLResponse(content=content)
+            resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            resp.headers["Pragma"] = "no-cache"
+            resp.headers["Expires"] = "0"
+            return resp
         return JSONResponse(status_code=404, content={"error": "Frontend not built"})

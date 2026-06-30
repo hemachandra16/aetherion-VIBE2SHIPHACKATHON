@@ -5,6 +5,7 @@ Returns structured response the frontend can render directly.
 No hardcoded scenarios anywhere — all values from user input or Gemini.
 """
 import logging
+import asyncio
 from .triage import run_triage
 from .planner import run_planner
 from .critic import run_critic
@@ -75,10 +76,12 @@ async def run_agent_pipeline(
 
     # ── Step 5: Plan ─────────────────────────────────────
     logger.info(f"[pipeline] Running planner for session={session_id}")
+    await asyncio.sleep(2.0)  # Pace request to avoid 429 limits
     plan = await run_planner(triage_result=triage_result, rag_context=rag_context)
 
     # ── Step 6: Critic ───────────────────────────────────
     logger.info(f"[pipeline] Running critic for session={session_id}")
+    await asyncio.sleep(2.0)  # Pace request to avoid 429 limits
     critic_result = await run_critic(
         plan=plan,
         time_remaining_minutes=int(time_remaining),

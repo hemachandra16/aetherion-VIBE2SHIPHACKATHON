@@ -1,6 +1,6 @@
 """
 Shared Gemini client configuration.
-Model lock: gemini-3.5-flash for reasoning (TEMP: gemini-2.5-flash while 3.5-flash is 503-ing),
+Model lock: gemini-2.5-flash for reasoning fallback,
 gemini-embedding-001 for embeddings.
 Never substitute models without explicit approval.
 """
@@ -12,9 +12,7 @@ from google.genai import types
 
 logger = logging.getLogger("aetherion.gemini")
 
-# TEMP: gemini-2.5-flash while gemini-3.5-flash returns 503 (high demand/traffic)
-# Revert to "gemini-3.5-flash" once demand clears — per user approval 2026-06-28
-REASONING_MODEL = "gemini-2.5-flash"
+REASONING_MODEL = "gemini-3.5-flash"
 EMBEDDING_MODEL = "gemini-embedding-001"
 
 _client = None
